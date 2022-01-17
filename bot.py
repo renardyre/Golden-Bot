@@ -19,9 +19,7 @@ goldens_uniotaku = 0
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
-    await bot.change_presence(activity=discord.Game(name="g!help"))
-    #watch_golden_uniotaku.start()
-    #watch_golden_shakaw.start()
+    await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name="g!help"))
 
 @bot.command(name='ayt', help='Check if the bot is online')
 async def online(ctx):
@@ -32,7 +30,7 @@ async def ping(ctx):
     await ctx.send(f'Pong! {round(bot.latency * 1000)}ms <:smugface:890265836076544081>')
 
 @bot.command(name='start', help="Only bot's owner can use")
-async def start(ctx, task):
+async def start(ctx, task='nothing'):
     if ctx.author.id == owner_id:
         if task == 'uniotaku' and not watch_golden_uniotaku.is_running():
             await ctx.send('Iniciando tarefa da Uniotaku')
@@ -56,7 +54,7 @@ async def start(ctx, task):
         await ctx.send('Você não tem permissão para usar este comando <:nyanbaka:890259994786807899>\n' + ctx.author.mention)
 
 @bot.command(name='stop', help="Only bot's owner can use")
-async def stop(ctx, task):
+async def stop(ctx, task='nothing'):
     if ctx.author.id == owner_id:
         if task == 'uniotaku' and watch_golden_uniotaku.is_running():
             await ctx.send('Parando tarefa da Uniotaku')
@@ -73,7 +71,7 @@ async def stop(ctx, task):
 
 @bot.command(name='setup',  help='Setup channels for Uniotaku and Shakaw Goldens. Usage: g!setup shakaw, g!setup uniotaku')
 @commands.has_permissions(manage_messages=True)
-async def setup(ctx, tracker):
+async def setup(ctx, tracker='nothing'):
     if tracker == 'uniotaku':
         with open ('channels/channels_uni.json', 'r') as f:
             uni = json.load(f)
@@ -93,7 +91,7 @@ async def setup(ctx, tracker):
 
 @bot.command(name='remove',help='Remove Golden feed. Usage: g!remove shakaw, g!remove uniotaku')
 @commands.has_permissions(manage_messages=True)
-async def remove(ctx, tracker):
+async def remove(ctx, tracker='nothing'):
     if tracker == 'uniotaku':
         with open ('channels/channels_uni.json', 'r') as f:
             uni = json.load(f)
