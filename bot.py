@@ -35,7 +35,7 @@ async def start(ctx, task='task'):
         if task.lower() == 'uniotaku' and not watch_golden_uniotaku.is_running():
             await ctx.send('Iniciando tarefa da Uniotaku')
             watch_golden_uniotaku.start()
-            if watch_golden_uniotaku.is_running():
+            if watch_golden_uniotaku.is_running(): 
                 await ctx.send('Tarefa da Uniotaku iniciada com sucesso!')
             else:
                 await ctx.send('Falha ao iniciar a tarefa')
@@ -72,40 +72,36 @@ async def stop(ctx, task='task'):
 @bot.command(name='setup',  help='Setup channels for Uniotaku and Shakaw Goldens. Usage: g!setup shakaw, g!setup uniotaku')
 @commands.has_permissions(manage_messages=True)
 async def setup(ctx, tracker='tracker'):
-    if tracker.lower() == 'uniotaku':
-        with open ('channels/channels_uni.json', 'r') as f:
-            uni = json.load(f)
-        uni[str(ctx.guild.id)] = int(str(ctx.channel.id))
-        await ctx.send('Canal configurado para Goldens da Uniotaku!')
-        with open ('channels/channels_uni.json', 'w') as f:
-            json.dump(uni, f, indent=4)
-    elif tracker.lower() == 'shakaw':
-        with open ('channels/channels_shakaw.json', 'r') as f:
-            shakaw = json.load(f)
-        shakaw[str(ctx.guild.id)] = int(str(ctx.channel.id))
-        await ctx.send('Canal configurado para Goldens da Shakaw!')
-        with open ('channels/channels_shakaw.json', 'w') as f:
-            json.dump(shakaw, f, indent=4)
+    with open('channels.json', 'r') as f:
+        channel_file = json.load(f)
+    if str(ctx.guild.id) not in channel_file:
+        channel_file[str(ctx.guild.id)] = {}
+        with open('channels.json', 'w') as f:
+            json.dump(channel_file, f, indent=4)
+
+    if tracker.lower() == 'uniotaku' or tracker.lower() == 'shakaw':
+        with open ('channels.json', 'r') as f:
+            channels = json.load(f)
+        channels[str(ctx.guild.id)][tracker.lower()] = ctx.channel.id
+        await ctx.send(f'Canal configurado para Goldens da {tracker.capitalize()}!')
+        with open ('channels.json', 'w') as f:
+            json.dump(channels, f, indent=4)
     else:
         await ctx.send('Usage: g!setup shakaw, g!setup uniotaku')
 
 @bot.command(name='remove',help='Remove Golden feed. Usage: g!remove shakaw, g!remove uniotaku')
 @commands.has_permissions(manage_messages=True)
-async def remove(ctx, tracker='nothing'):
-    if tracker.lower() == 'uniotaku':
-        with open ('channels/channels_uni.json', 'r') as f:
-            uni = json.load(f)
-        uni.pop(str(ctx.guild.id))
-        await ctx.send('Feed de Goldens da Uniotaku removido com sucesso!')
-        with open ('channels/channels_uni.json', 'w') as f:
-            json.dump(uni, f, indent=4)
-    elif tracker.lower() == 'shakaw':
-        with open ('channels/channels_shakaw.json', 'r') as f:
-            shakaw = json.load(f)
-        shakaw.pop(str(ctx.guild.id))
-        await ctx.send('Feed de Goldens da Shakaw removido com sucesso!')
-        with open ('channels/channels_shakaw.json', 'w') as f:
-            json.dump(shakaw, f, indent=4)
+async def remove(ctx, tracker='tracker'):
+    if tracker.lower() == 'uniotaku' or tracker.lower() == 'shakaw':
+        with open ('channels.json', 'r') as f:
+            channels = json.load(f)
+        if str(ctx.guild.id) in channels:
+            channels[str(ctx.guild.id)].pop(tracker.lower())
+            await ctx.send(f'Feed de Goldens da {tracker.capitalize()} removido com sucesso!')
+            with open ('channels.json', 'w') as f:
+                json.dump(channels, f, indent=4)
+        else:
+            await ctx.send(f'Nenhum canal configurado para o tracker {tracker.capitalize()}')
     else:
         await ctx.send('Usage: g!remove shakaw, g!remove uniotaku')
 
@@ -123,42 +119,42 @@ async def num_goldens(ctx):
         await ctx.send(message_uni + message_shakaw)
     else:
         await ctx.send('Inicie as tarefas para obter a quantidade de goldens')
-
+    
 
 @tasks.loop(minutes=12.0)
 async def watch_golden_uniotaku():
         with open('uni.json', 'r') as file:
             uni_old = json.load(file)
-
+    
         uni_new = python_uniotaku.torrents()
-
+        
         global goldens_uniotaku
-        goldens_uniotaku = len(uni_new)
+        goldens_uniotaku = len(uni_new) 
 
         new_goldens = [ i for i in uni_new if not i in uni_old ]
-
+    
         if new_goldens:
-
+            
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[UniGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")
                 for i in new_goldens:
                     logf.write(now() + f'[UniGoldens] {i}: {uni_new[i]["Nome"]}\n')
 
-            with open('channels/channels_uniotaku.json', 'r') as f:
+            with open('channels.json', 'r') as f:
                 json_file = json.load(f)
-                channels = [ json_file[i] for i in json_file ]
-
+                channels = [ json_file[i]['uniotaku'] for i in json_file ] 
+            
             for i in new_goldens:
-
+                
                 embed_golden = discord.Embed(title=uni_new[i]["Nome"], url=uni_new[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))  #(199, 138, 13))
-
+               
                 if uni_new[i]["Golden"]:
-                    embed = embed_golden
+                    embed = embed_golden 
                 else:
                     embed = discord.Embed(title=uni_new[i]["Nome"], url=uni_new[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))
-
+                
                 if uni_new[i]["Golden"]: embed.add_field(name="Golden até:", value=uni_new[i]["GoldenAte"], inline=False)
-
+               
                 embed.set_author(name="UniOtaku", icon_url="https://i.imgur.com/hlvOGyH.png")
                 embed.add_field(name="Tamanho", value=uni_new[i]["Tamanho"], inline=False)
                 embed.add_field(name="Categoria", value=uni_new[i]["Categoria"], inline=True)
@@ -174,41 +170,41 @@ async def watch_golden_uniotaku():
         else:
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[UniGoldens] Nenhum Golden Novo\n")
-
+            
 
 @tasks.loop(minutes=12.0)
 async def watch_golden_shakaw():
         with open('shakaw.json', 'r') as file:
             shakaw_old = json.load(file)
-
+    
         shakaw_new = python_shakaw.torrents()
-
+        
         global goldens_shakaw
         goldens_shakaw = len(shakaw_new)
 
         new_goldens = [ i for i in shakaw_new if not i in shakaw_old ]
-
+    
         if new_goldens:
-
+            
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[ShakawGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")
                 for i in new_goldens:
                     logf.write(now() + f'[ShakawGoldens] {i}: {shakaw_new[i]["Nome"]}\n')
-
-            with open('channels/channels_shakaw.json', 'r') as f:
+            
+            with open('channels.json', 'r') as f:
                 json_file = json.load(f)
-                channels = [ json_file[i] for i in json_file ]
-
+                channels = [ json_file[i]['shakaw'] for i in json_file ] 
+            
             for i in new_goldens:
-
+           
                 embed_golden=discord.Embed(title=shakaw_new[i]["Nome"], url=shakaw_new[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))    #(199, 138, 13))
-
+           
                 if shakaw_new[i]["Golden"]:
-                    embed = embed_golden
+                    embed = embed_golden 
                     embed.add_field(name="Golden até:", value=shakaw_new[i]["GoldenAte"], inline=False)
                 else:
                     embed = discord.Embed(title=shakaw_new[i]["Nome"], url=shakaw_new[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))
-
+           
                 embed.set_author(name="Shakaw", icon_url="https://i.imgur.com/e7Vzwu5.png")
                 embed.add_field(name="Tamanho", value=shakaw_new[i]["Tamanho"], inline=False)
                 embed.add_field(name="Categoria", value=shakaw_new[i]["Categoria"], inline=False)
@@ -225,7 +221,7 @@ async def watch_golden_shakaw():
         else:
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[ShakawGoldens] Nenhum Golden Novo\n")
-
+            
 def now():
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S ")
 
