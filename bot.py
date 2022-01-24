@@ -35,7 +35,7 @@ async def start(ctx, task='task'):
         if task.lower() == 'uniotaku' and not watch_golden_uniotaku.is_running():
             await ctx.send('Iniciando tarefa da Uniotaku')
             watch_golden_uniotaku.start()
-            if watch_golden_uniotaku.is_running(): 
+            if watch_golden_uniotaku.is_running():
                 await ctx.send('Tarefa da Uniotaku iniciada com sucesso!')
             else:
                 await ctx.send('Falha ao iniciar a tarefa')
@@ -46,7 +46,14 @@ async def start(ctx, task='task'):
                 await ctx.send('Tarefa da Shakaw iniciada com sucesso!')
             else:
                 await ctx.send('Falha ao iniciar a tarefa')
-        elif task.lower() != 'uniotaku' and task.lower() != 'shakaw':
+        elif task.lower() == 'alicepantsu' and not watch_alicepantsu.is_running():
+            await ctx.send('Iniciando tarefa da AlicePantsu')
+            watch_alicepantsu.start()
+            if watch_alicepantsu.is_running():
+                await ctx.send('Tareda da AlicePantsu iniciada com sucesso!')
+            else:
+                await ctx.send('Erro ao iniciar a tarefa')
+        elif task.lower() != 'uniotaku' and task.lower() != 'shakaw' and task.lower() != 'alicepantsu':
             await ctx.send('Tarefa inválida')
         else:
             await ctx.send('Tarefa já está ativa')
@@ -62,14 +69,16 @@ async def stop(ctx, task='task'):
         elif task.lower() == 'shakaw' and watch_golden_shakaw.is_running():
             await ctx.send('Parando tarefa da Shakaw')
             watch_golden_shakaw.cancel()
-        elif task.lower() != 'uniotaku' and task.lower() != 'shakaw':
+        elif task.lower() == 'alicepantsu' and watch_alicepantsu.is_running():
+            await ctx.send('Parando tarefa da AlicePantsu')
+        elif task.lower() != 'uniotaku' and task.lower() != 'shakaw' and task.lower() != 'alicepantsu':
             await ctx.send('Tarefa inválida')
         else:
             await ctx.send('Tarefa já está inativa')
     else:
         await ctx.send('Você não tem permissão para usar este comando <:nyanbaka:890259994786807899>\n' + ctx.author.mention)
 
-@bot.command(name='setup',  help='Setup channels for Uniotaku and Shakaw Goldens. Usage: g!setup shakaw, g!setup uniotaku')
+@bot.command(name='setup',  help='Setup channels for AlicePantsu, Uniotaku and Shakaw Goldens. Usage: g!setup shakaw, g!setup uniotaku, g!setup alicepantsu')
 @commands.has_permissions(manage_messages=True)
 async def setup(ctx, tracker='tracker'):
     with open('channels.json', 'r') as f:
@@ -79,7 +88,8 @@ async def setup(ctx, tracker='tracker'):
         with open('channels.json', 'w') as f:
             json.dump(channel_file, f, indent=4)
 
-    if tracker.lower() == 'uniotaku' or tracker.lower() == 'shakaw':
+    trackers = ['shakaw', 'uniotaku', 'alicepantsu']
+    if tracker.lower() in trackers:
         with open ('channels.json', 'r') as f:
             channels = json.load(f)
         channels[str(ctx.guild.id)][tracker.lower()] = ctx.channel.id
@@ -87,12 +97,13 @@ async def setup(ctx, tracker='tracker'):
         with open ('channels.json', 'w') as f:
             json.dump(channels, f, indent=4)
     else:
-        await ctx.send('Usage: g!setup shakaw, g!setup uniotaku')
+        await ctx.send('Usage: g!setup shakaw, g!setup uniotaku, g!setup alicepantsu')
 
-@bot.command(name='remove',help='Remove Golden feed. Usage: g!remove shakaw, g!remove uniotaku')
+@bot.command(name='remove',help='Remove Golden feed. Usage: g!remove shakaw, g!remove uniotaku, g!remove alicepantsu')
 @commands.has_permissions(manage_messages=True)
 async def remove(ctx, tracker='tracker'):
-    if tracker.lower() == 'uniotaku' or tracker.lower() == 'shakaw':
+    trackers = ['shakaw', 'uniotaku', 'alicepantsu']
+    if tracker.lower() in trackers:
         with open ('channels.json', 'r') as f:
             channels = json.load(f)
         if tracker.lower() in channels[str(ctx.guild.id)]:
@@ -103,13 +114,14 @@ async def remove(ctx, tracker='tracker'):
         else:
             await ctx.send(f'Nenhum canal configurado para o tracker {tracker.capitalize()}')
     else:
-        await ctx.send('Usage: g!remove shakaw, g!remove uniotaku')
+        await ctx.send('Usage: g!remove shakaw, g!remove uniotaku, g!remove alicepantsu')
 
 @bot.command(name='status', help='Status of Golden Tasks')
 async def status_tasks(ctx):
     message_uni = 'Tarefa da Uniotaku está ativa\n' if watch_golden_uniotaku.is_running() else 'Tarefa da Uniotaku não está ativa\n'
     message_shakaw = 'Tarefa da Shakaw está ativa\n' if watch_golden_shakaw.is_running() else 'Tarefa da Shakaw não está ativa\n'
-    await ctx.send(message_uni + message_shakaw)
+    message_alicepantsu = 'Tarefa da AlicePantsu está ativa\n' if watch_alicepantsu.is_running() else 'Tarefa da AlicePantsu não está ativa\n'
+    await ctx.send(f'{message_uni}{message_shakaw}{message_alicepantsu}')
 
 @bot.command(name='goldens', help='Display number of Goldens for each tracker')
 async def num_goldens(ctx):
@@ -129,7 +141,7 @@ async def watch_golden_uniotaku():
         uni_new = python_uniotaku.torrents()
 
         global goldens_uniotaku
-        goldens_uniotaku = len(uni_new) 
+        goldens_uniotaku = len(uni_new)
 
         new_goldens = [ i for i in uni_new if not i in uni_old ]
 
@@ -142,14 +154,14 @@ async def watch_golden_uniotaku():
 
             with open('channels.json', 'r') as f:
                 json_file = json.load(f)
-                channels = [ json_file[i]['uniotaku'] for i in json_file ] 
+                channels = [ json_file[i]['uniotaku'] for i in json_file if 'uniotaku' in json_file[i] ]
 
             for i in new_goldens:
 
                 embed_golden = discord.Embed(title=uni_new[i]["Nome"], url=uni_new[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))  #(199, 138, 13))
 
                 if uni_new[i]["Golden"]:
-                    embed = embed_golden 
+                    embed = embed_golden
                 else:
                     embed = discord.Embed(title=uni_new[i]["Nome"], url=uni_new[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))
 
@@ -193,14 +205,14 @@ async def watch_golden_shakaw():
 
             with open('channels.json', 'r') as f:
                 json_file = json.load(f)
-                channels = [ json_file[i]['shakaw'] for i in json_file ] 
+                channels = [ json_file[i]['shakaw'] for i in json_file if 'shakaw' in json_file[i] ]
 
             for i in new_goldens:
 
                 embed_golden=discord.Embed(title=shakaw_new[i]["Nome"], url=shakaw_new[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))    #(199, 138, 13))
 
                 if shakaw_new[i]["Golden"]:
-                    embed = embed_golden 
+                    embed = embed_golden
                     embed.add_field(name="Golden até:", value=shakaw_new[i]["GoldenAte"], inline=False)
                 else:
                     embed = discord.Embed(title=shakaw_new[i]["Nome"], url=shakaw_new[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))
@@ -221,6 +233,42 @@ async def watch_golden_shakaw():
         else:
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[ShakawGoldens] Nenhum Golden Novo\n")
+
+
+@tasks.loop(minutes=12.0)
+async def watch_alicepantsu():
+        with open('alicepantsu.json', 'r') as file:
+            alicepantsu_old = json.load(file)
+
+        alicepantsu_new = python_alicepantsu.torrents()
+
+
+        new_torrents = [ i for i in alicepantsu_new if not i in alicepantsu_old ]
+
+        if new_torrents:
+
+            with open(log_file(), 'a') as logf:
+                logf.write(now() + f"[AlicePantsu] {len(new_torrents)} Novos Torrents encontrados!\n")
+                for i in new_torrents:
+                    logf.write(now() + f'[AlicePantsu] {i["id"]}: {i["anime_name"]}\n')
+
+            with open('channels.json', 'r') as f:
+                json_file = json.load(f)
+                channels = [ json_file[i]['alicepantsu'] for i in json_file if 'alicepantsu' in json_file[i] ]
+
+            for i in new_torrents:
+
+                embed=discord.Embed(title=f'{i["anime_name"]} {i["qualidade"]}', url=i["download_link"].replace(' ', '%20'), color=discord.Color.from_rgb(250, 129, 110))
+
+                embed.set_author(name="AlicePantsu", icon_url="https://i.imgur.com/GgvDeCZ.png")
+                embed.add_field(name="Fansub", value=re.search('(?<=\[).*(?=\])', i["fansub"]).group(0), inline=True)
+                embed.add_field(name="Download", value=str(i["download_link"].replace(' ', '%20')), inline=False)
+                for i in channels:
+                    channel = bot.get_channel(id=i)
+                    await channel.send(embed=embed)
+        else:
+            with open(log_file(), 'a') as logf:
+                logf.write(now() + f"[AlicePantsu] Nenhum Torrent Novo\n")
 
 def now():
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S ")
