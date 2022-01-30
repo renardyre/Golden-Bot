@@ -50,7 +50,7 @@ async def start(ctx, task='task'):
             await ctx.send('Iniciando tarefa da AlicePantsu')
             watch_alicepantsu.start()
             if watch_alicepantsu.is_running():
-                await ctx.send('Tareda da AlicePantsu iniciada com sucesso!')
+                await ctx.send('Tarefa da AlicePantsu iniciada com sucesso!')
             else:
                 await ctx.send('Erro ao iniciar a tarefa')
         elif task.lower() != 'uniotaku' and task.lower() != 'shakaw' and task.lower() != 'alicepantsu':
@@ -243,7 +243,8 @@ async def watch_alicepantsu():
         alicepantsu_new = python_alicepantsu.torrents()
 
 
-        new_torrents = [ i for i in alicepantsu_new if not i in alicepantsu_old ]
+        new_torrents = [ i for i in alicepantsu_new['pantsu'] if not i in alicepantsu_old['pantsu'] ]
+        new_torrents += [ i for i in alicepantsu_new['nyan'] if not i in alicepantsu_old['nyan'] ]
 
         if new_torrents:
 

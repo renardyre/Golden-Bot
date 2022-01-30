@@ -10,7 +10,11 @@ def torrents():
     cookie = {'Cookie': 'pass=INSERT_HERE; uid=INSERT_HERE; page-sidebar=true'}
     
     page = requests.get(link, headers=cookie).text
-    dic = json.loads(page)
+    try:
+        dic = json.loads(page)
+    except:
+        dic = {}
+        dic['data'] = {}
     lista_goldens = dict()
 
     for i in range(0, len(dic['data'])):

@@ -20,6 +20,8 @@ def torrents():
 
     for torrent in torrents:
         colunas = torrent.find_all('td')
+        seeders = colunas[6].get_text(strip=True)
+        if seeders == "0": continue
         categoria = colunas[0].get_text(strip=True)
         torrent_id = re.search('\d{1,4}', colunas[1].a.get('href')).group(0)
         nome = colunas[1].get_text(" ", strip=True)
@@ -30,7 +32,6 @@ def torrents():
         criacao = colunas[3].get_text(" ", strip=True)
         arquivos = colunas[4].get_text(strip=True)
         tamanho = colunas[5].get_text(strip=True)
-        seeders = colunas[6].get_text(strip=True)
         leechers = colunas[7].get_text(strip=True)
         completado = colunas[8].get_text(strip=True)
         fansub = colunas[9].get_text(strip=True)
