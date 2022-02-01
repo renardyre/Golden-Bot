@@ -33,6 +33,7 @@ def torrents():
         torrent_page = BS(requests.get(link_torrent, headers=cookie).text, 'html5lib')
         for i in torrent_page.find_all(class_="img-fluid-500"):
             if 'discord' in i.get('src') or 'https://hacchifansub.net/wp-content/uploads/2020/01/capa-hacchi.jpg' in i.get('src') or 'https://i.imgur.com/lesBKL4.png' in i.get('src'):
+                image = ''
                 continue
             else:
                 image = i.get('src')
