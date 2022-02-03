@@ -2,14 +2,17 @@ import os
 import discord
 from discord.ext import tasks, commands
 from dotenv import load_dotenv
-import python_shakaw
-import python_uniotaku
+from Trackers import Shakaw, Uniotaku
+import python_alicepantsu
 import json
+import re
 from datetime import datetime
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN') #Edit .env file
-owner_id = 1234 #Change to your account id 
+owner_id = 1234 #Change to your account id
+cookie_shakaw = 'tbshakaw_iddu=INSERT_HERE; tbshakaw_spasse=INSERT_HERE; PHPSESSID=INSERT_HERE'
+cookie_uniotaku = 'pass=INSERT_HERE; uid=INSERT_HERE; page-sidebar=true'
 
 bot = commands.Bot(command_prefix='g!')
 
@@ -135,22 +138,20 @@ async def num_goldens(ctx):
 
 @tasks.loop(minutes=12.0)
 async def watch_golden_uniotaku():
-        with open('uni.json', 'r') as file:
-            uni_old = json.load(file)
 
-        uni_new = python_uniotaku.torrents()
-
+        current = Uniotaku(cookie_uniotaku)
+        new_goldens = current.get_new_data('uni.json')
+        current.save_ids('uni.json')
+        
         global goldens_uniotaku
-        goldens_uniotaku = len(uni_new)
-
-        new_goldens = [ i for i in uni_new if not i in uni_old ]
+        goldens_uniotaku = len(current)
 
         if new_goldens:
 
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[UniGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")
                 for i in new_goldens:
-                    logf.write(now() + f'[UniGoldens] {i}: {uni_new[i]["Nome"]}\n')
+                    logf.write(now() + f'[UniGoldens] {i}: {new_goldens[i]["Nome"]}\n')
 
             with open('channels.json', 'r') as f:
                 json_file = json.load(f)
@@ -158,24 +159,24 @@ async def watch_golden_uniotaku():
 
             for i in new_goldens:
 
-                embed_golden = discord.Embed(title=uni_new[i]["Nome"], url=uni_new[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))  #(199, 138, 13))
+                embed_golden = discord.Embed(title=new_goldens[i]["Nome"], url=new_goldens[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))  #(199, 138, 13))
 
-                if uni_new[i]["Golden"]:
+                if new_goldens[i]["Golden"]:
                     embed = embed_golden
                 else:
-                    embed = discord.Embed(title=uni_new[i]["Nome"], url=uni_new[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))
+                    embed = discord.Embed(title=new_goldens[i]["Nome"], url=new_goldens[i]["Pagina"], color=discord.Color.from_rgb(41, 165, 219))
 
-                if uni_new[i]["Golden"]: embed.add_field(name="Golden até:", value=uni_new[i]["GoldenAte"], inline=False)
+                if new_goldens[i]["Golden"]: embed.add_field(name="Golden até:", value=new_goldens[i]["GoldenAte"], inline=False)
 
                 embed.set_author(name="UniOtaku", icon_url="https://i.imgur.com/hlvOGyH.png")
-                embed.add_field(name="Tamanho", value=uni_new[i]["Tamanho"], inline=False)
-                embed.add_field(name="Categoria", value=uni_new[i]["Categoria"], inline=True)
-                embed.add_field(name="Seeders / Leechers", value=f'{uni_new[i]["Seeders"]} / {uni_new[i]["Leechers"]}', inline=True)
-                embed.add_field(name="Vezes Completado", value=uni_new[i]["Completado"], inline=True)
-                embed.add_field(name="Fansub", value=uni_new[i]["Fansub"], inline=True)
-                embed.add_field(name="Uploader", value=uni_new[i]["Uploader"], inline=True)
-                embed.add_field(name="Download", value=str(uni_new[i]["Download"]), inline=False)
-                embed.set_image(url=uni_new[i]["Imagem"])
+                embed.add_field(name="Tamanho", value=new_goldens[i]["Tamanho"], inline=False)
+                embed.add_field(name="Categoria", value=new_goldens[i]["Categoria"], inline=True)
+                embed.add_field(name="Seeders / Leechers", value=f'{new_goldens[i]["Seeders"]} / {new_goldens[i]["Leechers"]}', inline=True)
+                embed.add_field(name="Vezes Completado", value=new_goldens[i]["Completado"], inline=True)
+                embed.add_field(name="Fansub", value=new_goldens[i]["Fansub"], inline=True)
+                embed.add_field(name="Uploader", value=new_goldens[i]["Uploader"], inline=True)
+                embed.add_field(name="Download", value=str(new_goldens[i]["Download"]), inline=False)
+                embed.set_image(url=new_goldens[i]["Imagem"])
                 for i in channels:
                     channel = bot.get_channel(id=i)
                     await channel.send(embed=embed)
@@ -186,22 +187,20 @@ async def watch_golden_uniotaku():
 
 @tasks.loop(minutes=12.0)
 async def watch_golden_shakaw():
-        with open('shakaw.json', 'r') as file:
-            shakaw_old = json.load(file)
 
-        shakaw_new = python_shakaw.torrents()
+        current = Shakaw(cookie_shakaw)
+        new_goldens = current.get_new_data('shakaw.json')
+        current.save_ids('shakaw.json')
 
         global goldens_shakaw
-        goldens_shakaw = len(shakaw_new)
-
-        new_goldens = [ i for i in shakaw_new if not i in shakaw_old ]
+        goldens_shakaw = len(current)
 
         if new_goldens:
 
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[ShakawGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")
                 for i in new_goldens:
-                    logf.write(now() + f'[ShakawGoldens] {i}: {shakaw_new[i]["Nome"]}\n')
+                    logf.write(now() + f'[ShakawGoldens] {i}: {new_goldens[i]["Nome"]}\n')
 
             with open('channels.json', 'r') as f:
                 json_file = json.load(f)
@@ -209,24 +208,24 @@ async def watch_golden_shakaw():
 
             for i in new_goldens:
 
-                embed_golden=discord.Embed(title=shakaw_new[i]["Nome"], url=shakaw_new[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))    #(199, 138, 13))
+                embed_golden=discord.Embed(title=new_goldens[i]["Nome"], url=new_goldens[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))    #(199, 138, 13))
 
-                if shakaw_new[i]["Golden"]:
+                if new_goldens[i]["Golden"]:
                     embed = embed_golden
-                    embed.add_field(name="Golden até:", value=shakaw_new[i]["GoldenAte"], inline=False)
+                    embed.add_field(name="Golden até:", value=new_goldens[i]["GoldenAte"], inline=False)
                 else:
-                    embed = discord.Embed(title=shakaw_new[i]["Nome"], url=shakaw_new[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))
+                    embed = discord.Embed(title=new_goldens[i]["Nome"], url=new_goldens[i]["Pagina"], color=discord.Color.from_rgb(253, 253, 253))
 
                 embed.set_author(name="Shakaw", icon_url="https://i.imgur.com/e7Vzwu5.png")
-                embed.add_field(name="Tamanho", value=shakaw_new[i]["Tamanho"], inline=False)
-                embed.add_field(name="Categoria", value=shakaw_new[i]["Categoria"], inline=False)
-                embed.add_field(name="Arquivos", value=shakaw_new[i]["Arquivos"], inline=True)
-                embed.add_field(name="Seeders / Leechers", value=f'{shakaw_new[i]["Seeders"]} / {shakaw_new[i]["Leechers"]}', inline=True)
-                embed.add_field(name="Vezes Completado", value=shakaw_new[i]["Completado"], inline=True)
-                embed.add_field(name="Fansub", value=shakaw_new[i]["Fansub"], inline=True)
-                embed.add_field(name="Uploader", value=shakaw_new[i]["Uploader"], inline=True)
-                embed.add_field(name="Download", value=str(shakaw_new[i]["Download"]), inline=False)
-                embed.set_image(url=shakaw_new[i]["Imagem"])
+                embed.add_field(name="Tamanho", value=new_goldens[i]["Tamanho"], inline=False)
+                embed.add_field(name="Categoria", value=new_goldens[i]["Categoria"], inline=False)
+                embed.add_field(name="Arquivos", value=new_goldens[i]["Arquivos"], inline=True)
+                embed.add_field(name="Seeders / Leechers", value=f'{new_goldens[i]["Seeders"]} / {new_goldens[i]["Leechers"]}', inline=True)
+                embed.add_field(name="Vezes Completado", value=new_goldens[i]["Completado"], inline=True)
+                embed.add_field(name="Fansub", value=new_goldens[i]["Fansub"], inline=True)
+                embed.add_field(name="Uploader", value=new_goldens[i]["Uploader"], inline=True)
+                embed.add_field(name="Download", value=str(new_goldens[i]["Download"]), inline=False)
+                embed.set_image(url=new_goldens[i]["Imagem"])
                 for i in channels:
                     channel = bot.get_channel(id=i)
                     await channel.send(embed=embed)
