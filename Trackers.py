@@ -7,12 +7,12 @@ import json
 class Trackers():
     def save_ids(self, file):
         with open(file, 'w') as f:
-            json.dump(self.torrents_ids, f)
+            json.dump(list(self.torrents_ids), f)
 
     def compare_with_file(self, file):
         with open(file, 'r') as f:
-            file_ids = json.load(f)
-        result = [i for i in self.torrents_ids if not i in file_ids]
+            file_ids = set(json.load(f))
+        result = self.torrents_ids - file_ids
         return result
 
     def get_new_data(self, file):
@@ -43,11 +43,11 @@ class Shakaw(Trackers):
         return torrents_rows
 
     def get_ids(self):
-        ids = []
+        ids = set()
         for row in self.torrents_rows:
             rows = row.find_all('td')
             torrent_id = re.search('\d{1,4}', rows[1].a.get('href')).group(0)
-            ids.append(torrent_id)
+            ids.add(torrent_id)
         return ids
 
     def get_data(self, skip_no_seeders=True, ids=None):
@@ -123,11 +123,11 @@ class Uniotaku(Trackers):
 
     def get_ids(self):
         torrents_dic = self.torrents_dic
-        ids = []
+        ids = set()
         for i in range(len(torrents_dic)):
-            html = BS(str(torrents_dic), 'html5lib')
+            html = BS(str(torrents_dic[i]), 'html5lib')
             torrent_id = re.search('\d{1,5}', html.find('a').get('href')).group(0)
-            ids.append(torrent_id)
+            ids.add(torrent_id)
         return ids
 
     def get_data(self, skip_no_seeders=True, ids=None):
@@ -135,7 +135,7 @@ class Uniotaku(Trackers):
         data = {}
         ids_list = self.torrents_ids if ids == None else ids
         for i in range(len(torrents_dic)):
-            html = BS(str(torrents_dic), 'html5lib')
+            html = BS(str(torrents_dic[i]), 'html5lib')
             torrent_id = re.search('\d{1,5}', html.find('a').get('href')).group(0)
             if torrent_id not in ids_list: continue
             seeders = BS(torrents_dic[i][3], 'html5lib').text

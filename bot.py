@@ -56,7 +56,12 @@ async def start(ctx, task='task'):
                 await ctx.send('Tarefa da AlicePantsu iniciada com sucesso!')
             else:
                 await ctx.send('Erro ao iniciar a tarefa')
-        elif task.lower() != 'uniotaku' and task.lower() != 'shakaw' and task.lower() != 'alicepantsu':
+        elif task.lower() == 'all' and not watch_golden_uniotaku.is_running() and not watch_golden_shakaw.is_running() and not watch_alicepantsu.is_running():
+            await ctx.send('Iniciando todas as tarefas')
+            watch_golden_uniotaku.start()
+            watch_golden_shakaw.start()
+            watch_alicepantsu.start()
+        elif task.lower() != 'uniotaku' and task.lower() != 'shakaw' and task.lower() != 'alicepantsu' and task.lower() != 'all':
             await ctx.send('Tarefa inválida')
         else:
             await ctx.send('Tarefa já está ativa')
