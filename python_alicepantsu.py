@@ -8,7 +8,7 @@ def torrents():
     with open('alicepantsu.json', 'w') as file:
         json.dump(page, file, indent=4)
 
-    return torrents
+    return page
 
 
 if __name__ == '__main__':

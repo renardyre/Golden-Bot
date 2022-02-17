@@ -2,18 +2,19 @@ from bs4 import BeautifulSoup as BS
 import re
 import requests
 import json
+import time
 
 
 class Trackers():
     def save_ids(self, file):
         with open(file, 'w') as f:
-            json.dump(list(self.torrents_ids), f)
+            json.dump(sorted(self.torrents_ids), f)
 
     def compare_with_file(self, file):
         with open(file, 'r') as f:
             file_ids = set(json.load(f))
         result = self.torrents_ids - file_ids
-        return result
+        return sorted(result)
 
     def get_new_data(self, file):
         new = self.compare_with_file(file)
@@ -113,13 +114,15 @@ class Uniotaku(Trackers):
         self.torrents_ids = self.get_ids()
 
     def get_torrents_dic(self):
-        page = requests.get(self.link, headers=self.cookie).text
-        try:
-            dic = json.loads(page)
-        except:
-            dic = {}
-            dic['data'] = {}
-        return dic['data']
+        error = True
+        while error:
+            time.sleep(3)
+            try:
+                page = requests.get(self.link, headers=self.cookie).json()
+                error = False
+            except:
+                error = True
+        return page['data']
 
     def get_ids(self):
         torrents_dic = self.torrents_dic
