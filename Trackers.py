@@ -16,9 +16,9 @@ class Trackers():
         result = self.torrents_ids - file_ids
         return sorted(result)
 
-    def get_new_data(self, file):
+    def get_new_data(self, file, skip_no_seeders=True):
         new = self.compare_with_file(file)
-        return self.get_data(ids=new)
+        return self.get_data(ids=new, skip_no_seeders=skip_no_seeders)
 
     def __str__(self):
         return str(self.torrents_ids)
