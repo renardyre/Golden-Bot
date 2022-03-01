@@ -59,7 +59,9 @@ class Shakaw(Trackers):
             torrent_id = re.search('\d{1,4}', rows[1].a.get('href')).group(0)
             if torrent_id not in ids_list: continue
             seeders = rows[6].get_text(strip=True)
-            if skip_no_seeders and seeders == "0" : continue
+            if skip_no_seeders and seeders == "0":
+                self.torrents_ids.remove(torrent_id)
+                continue
             categoria = rows[0].get_text(strip=True)
             nome = rows[1].get_text(" ", strip=True)
             link_pagina = "https://tracker.shakaw.com.br/torrent.php?torrent_id=" + torrent_id
@@ -142,7 +144,9 @@ class Uniotaku(Trackers):
             torrent_id = re.search('\d{1,5}', html.find('a').get('href')).group(0)
             if torrent_id not in ids_list: continue
             seeders = BS(torrents_dic[i][3], 'html5lib').text
-            if skip_no_seeders and seeders == 0: continue
+            if skip_no_seeders and seeders == 0:
+                self.torrents_ids.remove(torrent_id)
+                continue
             link_torrent = "https://tracker.uniotaku.com/torrents-details.php?id=" + torrent_id
             link_download = "https://tracker.uniotaku.com/download.php?id=" + torrent_id
             name = html.find_all('a')[0].text
