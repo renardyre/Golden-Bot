@@ -144,7 +144,7 @@ async def num_goldens(ctx):
 @tasks.loop(minutes=5.0)
 async def watch_golden_uniotaku():
 
-        current = Uniotaku(cookie_uniotaku)
+        current = Uniotaku(cookie_uniotaku, skip_no_seeders=False)
         new_goldens_ids = current.compare_with_file('uni.json')
         current.save_ids('uni.json')
  
@@ -153,7 +153,7 @@ async def watch_golden_uniotaku():
 
         if new_goldens_ids:
 
-            new_goldens = await current.get_data_async(skip_no_seeders=False, ids=new_goldens_ids)
+            new_goldens = await current.get_data_async(ids=new_goldens_ids)
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[UniGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")
                 for i in new_goldens:
@@ -203,7 +203,7 @@ async def watch_golden_shakaw():
 
         if new_goldens_ids:
 
-            new_goldens = await current.get_data_async(skip_no_seeders=True, ids=new_goldens_ids)
+            new_goldens = await current.get_data_async(ids=new_goldens_ids)
 
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[ShakawGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")

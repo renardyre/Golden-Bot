@@ -18,13 +18,13 @@ class Trackers():
         result = self.torrents_ids - file_ids
         return sorted(result)
 
-    def get_data(self, skip_no_seeders=True, ids=None):
-        response = asyncio.run(self.get_data_async(skip_no_seeders, ids))
+    def get_data(self, ids=None):
+        response = asyncio.run(self.get_data_async(ids))
         return response
 
-    def get_new_data(self, file, skip_no_seeders=True):
+    def get_new_data(self, file):
         new = self.compare_with_file(file)
-        return self.get_data(skip_no_seeders=skip_no_seeders, ids=new)
+        return self.get_data(ids=new)
 
     def __str__(self):
         return str(self.torrents_ids)
@@ -61,7 +61,7 @@ class Shakaw(Trackers):
             ids.add(torrent_id)
         return ids
 
-    async def get_data_async(self, skip_no_seeders=True, ids=None):
+    async def get_data_async(self, ids=None):
         data = {}
         tasks = []
         ids_list = self.torrents_ids if ids == None else ids
@@ -141,7 +141,7 @@ class Uniotaku(Trackers):
             ids.add(torrent_id)
         return ids
 
-    async def get_data_async(self, skip_no_seeders=True, ids=None):
+    async def get_data_async(self, ids=None):
         torrents_dic = self.torrents_dic
         data = {}
         tasks = []
