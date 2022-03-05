@@ -141,18 +141,19 @@ async def num_goldens(ctx):
         await ctx.send('Inicie as tarefas para obter a quantidade de goldens')
 
 
-@tasks.loop(minutes=12.0)
+@tasks.loop(minutes=5.0)
 async def watch_golden_uniotaku():
 
         current = Uniotaku(cookie_uniotaku)
-        new_goldens = current.get_new_data('uni.json')
+        new_goldens_ids = current.compare_with_file('uni.json')
         current.save_ids('uni.json')
-        
+ 
         global goldens_uniotaku
         goldens_uniotaku = len(current)
 
-        if new_goldens:
+        if new_goldens_ids:
 
+            new_goldens = await current.get_data_async(skip_no_seeders=False, ids=new_goldens_ids)
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[UniGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")
                 for i in new_goldens:
@@ -187,20 +188,22 @@ async def watch_golden_uniotaku():
                     await channel.send(embed=embed)
         else:
             with open(log_file(), 'a') as logf:
-                logf.write(now() + f"[UniGoldens] Nenhum Golden Novo\n")
+                logf.write(now() + f"[UniGoldens] {str(sorted(current.torrents_ids))}\n")
 
 
-@tasks.loop(minutes=12.0)
+@tasks.loop(minutes=5.0)
 async def watch_golden_shakaw():
 
         current = Shakaw(cookie_shakaw)
-        new_goldens = current.get_new_data('shakaw.json')
+        new_goldens_ids = current.compare_with_file('shakaw.json')
         current.save_ids('shakaw.json')
 
         global goldens_shakaw
         goldens_shakaw = len(current)
 
-        if new_goldens:
+        if new_goldens_ids:
+
+            new_goldens = await current.get_data_async(skip_no_seeders=True, ids=new_goldens_ids)
 
             with open(log_file(), 'a') as logf:
                 logf.write(now() + f"[ShakawGoldens] {len(new_goldens)} Novos Goldens encontrados!\n")
@@ -236,7 +239,7 @@ async def watch_golden_shakaw():
                     await channel.send(embed=embed)
         else:
             with open(log_file(), 'a') as logf:
-                logf.write(now() + f"[ShakawGoldens] Nenhum Golden Novo\n")
+                logf.write(now() + f"[ShakawGoldens] {str(sorted(current.torrents_ids))}\n")
 
 
 @tasks.loop(minutes=12.0)
