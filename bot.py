@@ -8,6 +8,25 @@ import json
 import re
 from datetime import datetime
 
+
+if not os.path.isfile('./alicepantsu.json'):
+    with open('alicepantsu.json', 'w') as file:
+        json.dump(dict(), file)
+if not os.path.isfile('./channels.json'):
+    with open('channels.json', 'w') as file:
+        json.dump(dict(), file)
+if not os.path.isfile('./shakaw.json'):
+    with open('shakaw.json', 'w') as file:
+        json.dump(list(), file)
+if not os.path.isfile('./uni.json'):
+    with open('uni.json', 'w') as file:
+        json.dump(list(), file)
+if not os.path.isdir('./logs'):
+    os.mkdir('./logs')
+if not os.path.isfile('./.env'):
+    print("Please create .env file")
+    exit(0)
+
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 owner_id = int(os.getenv('OWNER_ID'))
