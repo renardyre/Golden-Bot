@@ -9,10 +9,10 @@ import re
 from datetime import datetime
 
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN') #Edit .env file
-owner_id = 1234 #Change to your account id
-cookie_shakaw = 'tbshakaw_iddu=INSERT_HERE; tbshakaw_spasse=INSERT_HERE; PHPSESSID=INSERT_HERE'
-cookie_uniotaku = 'pass=INSERT_HERE; uid=INSERT_HERE; page-sidebar=true'
+TOKEN = os.getenv('DISCORD_TOKEN')
+owner_id = int(os.getenv('OWNER_ID'))
+cookie_shakaw = os.getenv('COOKIE_SHAKAW')
+cookie_uniotaku = os.getenv('COOKIE_UNIOTAKU')
 
 bot = commands.Bot(command_prefix='g!')
 
