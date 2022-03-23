@@ -4,7 +4,7 @@ import requests
 import json
 import time
 import asyncio
-import httpx
+import aiohttp
 
 
 class Trackers():
@@ -27,6 +27,9 @@ class Trackers():
         return self.get_data(ids=new)
 
     def __str__(self):
+        return str(self.torrents_ids)
+
+    def __repr__(self):
         return str(self.torrents_ids)
 
     def __len__(self):
@@ -65,16 +68,17 @@ class Shakaw(Trackers):
         data = {}
         tasks = []
         ids_list = self.torrents_ids if ids == None else ids
-        for row in self.torrents_rows:
-            rows = row.find_all('td')
-            torrent_id = re.search('\d{1,4}', rows[1].a.get('href')).group(0)
-            if torrent_id not in ids_list: continue
+        async with aiohttp.ClientSession() as session:
+            for row in self.torrents_rows:
+                rows = row.find_all('td')
+                torrent_id = re.search('\d{1,4}', rows[1].a.get('href')).group(0)
+                if torrent_id not in ids_list: continue
 
-            data[torrent_id] = dict()
-            tasks.append(self.page_info(rows, data, torrent_id))
-            tasks.append(self.general_info(rows, data, torrent_id))
+                data[torrent_id] = dict()
+                tasks.append(self.page_info(rows, data, torrent_id, session))
+                tasks.append(self.general_info(rows, data, torrent_id))
 
-        done, pending = await asyncio.wait(tasks)
+            done, pending = await asyncio.wait(tasks)
         return data    
 
     async def general_info(self, rows, db, torrent_id):
@@ -92,11 +96,11 @@ class Shakaw(Trackers):
         db[torrent_id]['Uploader'] = rows[10].get_text(strip=True)
         db[torrent_id]['Comentarios'] = rows[11].get_text(strip=True)
 
-    async def page_info(self, rows, db, torrent_id):
+    async def page_info(self, rows, db, torrent_id, session):
         link_pagina = "https://tracker.shakaw.com.br/torrent.php?torrent_id=" + torrent_id
-        async with httpx.AsyncClient() as client:
-            r = await client.get(link_pagina, headers=self.cookie)
-        pagina_torrent = BS(r.text, 'html.parser')
+        async with session.get(link_pagina, headers=self.cookie) as response:
+            r = await response.text()
+        pagina_torrent = BS(r, 'html.parser')
         db[torrent_id]['Imagem'] = pagina_torrent.find(id="imagem_do_torrent").get('src')
         golden = str(rows[1].find_all('span', class_="icone_golden_torrent")) == '[<span class="icone_golden_torrent" title="Gold"></span>]'
         if golden:
@@ -146,16 +150,17 @@ class Uniotaku(Trackers):
         data = {}
         tasks = []
         ids_list = self.torrents_ids if ids == None else ids
-        for i in range(len(torrents_dic)):
-            html = BS(str(torrents_dic[i]), 'html.parser')
-            torrent_id = re.search('\d{1,5}', html.find('a').get('href')).group(0)
-            if torrent_id not in ids_list: continue
+        async with aiohttp.ClientSession() as session:
+            for i in range(len(torrents_dic)):
+                html = BS(str(torrents_dic[i]), 'html.parser')
+                torrent_id = re.search('\d{1,5}', html.find('a').get('href')).group(0)
+                if torrent_id not in ids_list: continue
 
-            data[torrent_id] = dict()
-            tasks.append(self.page_info(i, html, data, torrent_id))
-            tasks.append(self.general_info(i, html, data, torrent_id))
+                data[torrent_id] = dict()
+                tasks.append(self.page_info(i, html, data, torrent_id, session))
+                tasks.append(self.general_info(i, html, data, torrent_id))
 
-        done, pending = await asyncio.wait(tasks)
+            done, pending = await asyncio.wait(tasks)
         return data
 
     async def general_info(self, i, html, db, torrent_id):
@@ -171,11 +176,11 @@ class Uniotaku(Trackers):
         db[torrent_id]['Completado'] = BS(torrents_dic[i][5], 'html.parser').text
         db[torrent_id]['Tamanho'] = BS(torrents_dic[i][6], 'html.parser').text
 
-    async def page_info(self, i, html, db, torrent_id):
+    async def page_info(self, i, html, db, torrent_id, session):
         link_pagina = "https://tracker.uniotaku.com/torrents-details.php?id=" + torrent_id
-        async with httpx.AsyncClient() as client:
-            r = await client.get(link_pagina, headers=self.cookie)
-        torrent_page = BS(r.text, 'html.parser')
+        async with session.get(link_pagina, headers=self.cookie) as response:
+            r = await response.text()
+        torrent_page = BS(r, 'html.parser')
         for i in torrent_page.find_all(class_="img-fluid-500"):
             if 'discord' in i.get('src') or 'https://hacchifansub.net/wp-content/uploads/2020/01/capa-hacchi.jpg' in i.get('src') or 'https://i.imgur.com/lesBKL4.png' in i.get('src'):
                 db[torrent_id]['Imagem'] = ''
